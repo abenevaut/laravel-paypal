@@ -2,9 +2,11 @@
 
 namespace abenevaut\Paypal\Providers;
 
+use abenevaut\Paypal\Contracts\PaypalEntitiesEnum;
 use abenevaut\Paypal\Contracts\PaypalProviderNameInterface;
 use abenevaut\Paypal\Factories\PaypalDriverFactory;
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Collection;
 use Illuminate\Support\ServiceProvider;
 
 class PaypalServiceProvider extends ServiceProvider implements PaypalProviderNameInterface
@@ -18,6 +20,11 @@ class PaypalServiceProvider extends ServiceProvider implements PaypalProviderNam
 
     public function boot(): void
     {
+        Collection::macro('toPaypalEntity', function (PaypalEntitiesEnum $driver) {
+            return $this->map(function ($value) use ($driver) {
+                return new ("abenevaut\\Paypal\\Entities\\{$driver->value}Entity")($value);
+            });
+        });
     }
 
     public function register(): void

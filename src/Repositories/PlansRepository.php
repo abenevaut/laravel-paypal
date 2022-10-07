@@ -3,29 +3,44 @@
 namespace abenevaut\Paypal\Repositories;
 
 use abenevaut\Paypal\Contracts\PaypalApiRepositoryAbstract;
+use abenevaut\Paypal\Contracts\PaypalEntitiesEnum;
+use abenevaut\Paypal\Entities\PlanEntity;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
 final class PlansRepository extends PaypalApiRepositoryAbstract
 {
-    public function all(): Collection
+    public function all(): LengthAwarePaginator
     {
-        return $this
+        $response = $this
             ->request()
             ->get($this->makeUrl("/v1/billing/plans"))
-            ->collect();
+            ->json();
+
+        $resources = Collection::make($response['plans'])
+            ->toPaypalEntity(PaypalEntitiesEnum::PLAN);
+
+        return new LengthAwarePaginator(
+            $resources,
+            $resources->count(),
+            $response['total_items'],
+            $response['total_pages']
+        );
     }
 
-    public function get(string $planId): Collection
+    public function get(string $planId): PlanEntity
     {
-        return $this
+        $plan = $this
             ->request()
             ->get($this->makeUrl("/v1/billing/plans/{$planId}"))
-            ->collect();
+            ->json();
+
+        return new PlanEntity($plan);
     }
 
-    public function create(array $params): Collection
+    public function create(array $params): PlanEntity
     {
-        return $this
+        $plan = $this
             ->request()
             ->post($this->makeUrl("/v1/billing/plans"), [
                 'product_id' => $params['product_id'],
@@ -54,6 +69,8 @@ final class PlansRepository extends PaypalApiRepositoryAbstract
                     'percentage' => 20,
                 ],
             ])
-            ->collect();
+            ->body();
+
+        return new PlanEntity($plan);
     }
 }
